@@ -3,7 +3,7 @@ import jsQR from "jsqr";
 import { db, updateDoc, setDoc } from "../utils/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanLine, Camera, CheckCircle, ZoomIn, ZoomOut } from "lucide-react";
+import { ScanLine, Camera, CheckCircle, ZoomIn, ZoomOut, Clock, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 
@@ -15,6 +15,7 @@ const Scanner = () => {
   const [exitTime, setExitTime] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
   const [breakStartTime, setBreakStartTime] = useState(null);
+  const [alreadyExited, setAlreadyExited] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -110,20 +111,17 @@ const Scanner = () => {
                 );
 
                 if (existingStudent) {
-                  if (!existingStudent.studentExitTime) {
-                    if (onBreak) {
-                      // End break
-                      existingStudent.studentExitTime = scanResult.time;
-                      setExitTime(scanResult.time);
-                      setOnBreak(false);
-                    } else {
-                      // Start break
-                      setOnBreak(true);
-                      setBreakStartTime(scanResult.time);
-                    }
-                  } else {
+                  if (existingStudent.studentExitTime) {
+                    setAlreadyExited(true);
+                  } else if (onBreak) {
+                    // End break
                     existingStudent.studentExitTime = scanResult.time;
                     setExitTime(scanResult.time);
+                    setOnBreak(false);
+                  } else {
+                    // Start break
+                    setOnBreak(true);
+                    setBreakStartTime(scanResult.time);
                   }
                 } else {
                   presentList.push(updatedEntry);
@@ -174,6 +172,7 @@ const Scanner = () => {
     setExitTime(null);
     setOnBreak(false);
     setBreakStartTime(null);
+    setAlreadyExited(false);
   };
 
   const formatTime = (timeString) => {
@@ -251,7 +250,7 @@ const Scanner = () => {
                   {student ? "Attendance recorded successfully!" : "QR code detected"}
                 </p>
 
-                {entryTime && !onBreak && (
+                {entryTime && !onBreak && !alreadyExited && (
                   <div className="w-full mb-2">
                     <h4 className="text-yellow-400 font-medium mb-1">Entry Time:</h4>
                     <div className="bg-gray-800 rounded-md p-3 text-sm">
@@ -278,7 +277,16 @@ const Scanner = () => {
                   </div>
                 )}
 
-                {!entryTime && !exitTime && (
+                {alreadyExited && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-red-400 font-medium mb-1">Already Exited:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">You have already exited for today. See you tomorrow!</p>
+                    </div>
+                  </div>
+                )}
+
+                {!entryTime && !exitTime && !alreadyExited && (
                   <div className="w-full mb-2">
                     <h4 className="text-yellow-400 font-medium mb-1">Current Time:</h4>
                     <div className="bg-gray-800 rounded-md p-3 text-sm">
