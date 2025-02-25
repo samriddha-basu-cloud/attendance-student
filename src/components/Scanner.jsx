@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScanLine, Camera, CheckCircle, ZoomIn, ZoomOut, Clock, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const Scanner = () => {
   const [qrData, setQrData] = useState(null);
@@ -15,7 +17,9 @@ const Scanner = () => {
   const [exitTime, setExitTime] = useState(null);
   const [onBreak, setOnBreak] = useState(false);
   const [breakStartTime, setBreakStartTime] = useState(null);
+  const [breakEndTime, setBreakEndTime] = useState(null);
   const [alreadyExited, setAlreadyExited] = useState(false);
+  const [takeBreak, setTakeBreak] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -115,13 +119,17 @@ const Scanner = () => {
                     setAlreadyExited(true);
                   } else if (onBreak) {
                     // End break
-                    existingStudent.studentExitTime = scanResult.time;
-                    setExitTime(scanResult.time);
+                    existingStudent.breakEndTime = scanResult.time;
+                    setBreakEndTime(scanResult.time);
                     setOnBreak(false);
-                  } else {
+                  } else if (takeBreak) {
                     // Start break
                     setOnBreak(true);
                     setBreakStartTime(scanResult.time);
+                  } else {
+                    // Mark exit time
+                    existingStudent.studentExitTime = scanResult.time;
+                    setExitTime(scanResult.time);
                   }
                 } else {
                   presentList.push(updatedEntry);
@@ -162,7 +170,7 @@ const Scanner = () => {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [student, scanning]);
+  }, [student, scanning, takeBreak]);
 
   const resetScanner = () => {
     setQrData(null);
@@ -172,7 +180,9 @@ const Scanner = () => {
     setExitTime(null);
     setOnBreak(false);
     setBreakStartTime(null);
+    setBreakEndTime(null);
     setAlreadyExited(false);
+    setTakeBreak(false);
   };
 
   const formatTime = (timeString) => {
@@ -268,6 +278,15 @@ const Scanner = () => {
                   </div>
                 )}
 
+                {breakEndTime && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-yellow-400 font-medium mb-1">Break End Time:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">{formatTime(breakEndTime)}</p>
+                    </div>
+                  </div>
+                )}
+
                 {exitTime && (
                   <div className="w-full mb-2">
                     <h4 className="text-yellow-400 font-medium mb-1">Exit Time:</h4>
@@ -293,6 +312,19 @@ const Scanner = () => {
                       <p className="text-gray-300">{formatTime(new Date().toTimeString().split(" ")[0])}</p>
                     </div>
                     <p className="text-gray-300 mt-2">Scan the attendance QR to record your entry.</p>
+                  </div>
+                )}
+
+                {entryTime && !onBreak && !alreadyExited && (
+                  <div className="w-full mb-4">
+                    <RadioGroup value={takeBreak ? "break" : "exit"} onValueChange={(value) => setTakeBreak(value === "break")}>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="break" id="break" />
+                        <Label htmlFor="break">Take Break</Label>
+                        <RadioGroupItem value="exit" id="exit" />
+                        <Label htmlFor="exit">Exit</Label>
+                      </div>
+                    </RadioGroup>
                   </div>
                 )}
 
