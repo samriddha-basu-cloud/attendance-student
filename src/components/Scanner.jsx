@@ -11,6 +11,8 @@ const Scanner = () => {
   const [qrData, setQrData] = useState(null);
   const [scanning, setScanning] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [entryTime, setEntryTime] = useState(null);
+  const [exitTime, setExitTime] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -20,7 +22,7 @@ const Scanner = () => {
 
   const handleZoomChange = async (value) => {
     setZoomLevel(value[0]);
-    
+
     // Apply zoom if supported
     if (streamRef.current) {
       const videoTrack = streamRef.current.getVideoTracks()[0];
@@ -42,16 +44,16 @@ const Scanner = () => {
 
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
             facingMode: "environment",
             width: { ideal: 1280 },
             height: { ideal: 720 }
-          } 
+          }
         });
-        
+
         streamRef.current = stream;
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await new Promise((resolve) => videoRef.current.onloadedmetadata = resolve);
@@ -67,10 +69,10 @@ const Scanner = () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
         const canvas = canvasRef.current;
         const context = canvas.getContext("2d");
-        
+
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
-        
+
         context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height);
@@ -107,8 +109,10 @@ const Scanner = () => {
 
                 if (existingStudent) {
                   existingStudent.studentExitTime = scanResult.time;
+                  setExitTime(scanResult.time);
                 } else {
                   presentList.push(updatedEntry);
+                  setEntryTime(scanResult.time);
                 }
 
                 updateDoc(attendanceRef, { Present: presentList });
@@ -119,6 +123,7 @@ const Scanner = () => {
                   Day: day,
                   Present: [updatedEntry],
                 });
+                setEntryTime(scanResult.time);
               }
             });
           } catch (error) {
@@ -126,7 +131,7 @@ const Scanner = () => {
           }
         }
       }
-      
+
       if (scanning) {
         animationFrameId = requestAnimationFrame(tick);
       }
@@ -150,6 +155,8 @@ const Scanner = () => {
     setQrData(null);
     setScanning(true);
     setZoomLevel(1);
+    setEntryTime(null);
+    setExitTime(null);
   };
 
   return (
@@ -192,7 +199,7 @@ const Scanner = () => {
                     Position QR code within the frame
                   </div>
                 </div>
-                
+
                 {/* Zoom Controls */}
                 <div className="bg-gray-800 p-4">
                   <div className="flex items-center gap-4">
@@ -221,18 +228,27 @@ const Scanner = () => {
                 <p className="text-gray-300 mb-4 text-center">
                   {student ? "Attendance recorded successfully!" : "QR code detected"}
                 </p>
-                
-                {qrData && (
-                  <div className="w-full mb-4">
-                    <h4 className="text-yellow-400 font-medium mb-2">Scan Details:</h4>
-                    <div className="bg-gray-800 rounded-md p-3 text-sm overflow-x-auto max-h-40">
-                      <pre className="text-gray-300 whitespace-pre-wrap">{JSON.stringify(qrData, null, 2)}</pre>
+
+                {entryTime && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-yellow-400 font-medium mb-1">Entry Time:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">{entryTime}</p>
                     </div>
                   </div>
                 )}
-                
-                <Button 
-                  onClick={resetScanner} 
+
+                {exitTime && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-yellow-400 font-medium mb-1">Exit Time:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">{exitTime}</p>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={resetScanner}
                   className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black"
                 >
                   Scan Again
