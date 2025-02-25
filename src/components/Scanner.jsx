@@ -13,6 +13,8 @@ const Scanner = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const [entryTime, setEntryTime] = useState(null);
   const [exitTime, setExitTime] = useState(null);
+  const [onBreak, setOnBreak] = useState(false);
+  const [breakStartTime, setBreakStartTime] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -108,8 +110,21 @@ const Scanner = () => {
                 );
 
                 if (existingStudent) {
-                  existingStudent.studentExitTime = scanResult.time;
-                  setExitTime(scanResult.time);
+                  if (!existingStudent.studentExitTime) {
+                    if (onBreak) {
+                      // End break
+                      existingStudent.studentExitTime = scanResult.time;
+                      setExitTime(scanResult.time);
+                      setOnBreak(false);
+                    } else {
+                      // Start break
+                      setOnBreak(true);
+                      setBreakStartTime(scanResult.time);
+                    }
+                  } else {
+                    existingStudent.studentExitTime = scanResult.time;
+                    setExitTime(scanResult.time);
+                  }
                 } else {
                   presentList.push(updatedEntry);
                   setEntryTime(scanResult.time);
@@ -157,6 +172,13 @@ const Scanner = () => {
     setZoomLevel(1);
     setEntryTime(null);
     setExitTime(null);
+    setOnBreak(false);
+    setBreakStartTime(null);
+  };
+
+  const formatTime = (timeString) => {
+    const [hours, minutes] = timeString.split(":");
+    return `${hours}:${minutes}`;
   };
 
   return (
@@ -229,11 +251,20 @@ const Scanner = () => {
                   {student ? "Attendance recorded successfully!" : "QR code detected"}
                 </p>
 
-                {entryTime && (
+                {entryTime && !onBreak && (
                   <div className="w-full mb-2">
                     <h4 className="text-yellow-400 font-medium mb-1">Entry Time:</h4>
                     <div className="bg-gray-800 rounded-md p-3 text-sm">
-                      <p className="text-gray-300">{entryTime}</p>
+                      <p className="text-gray-300">{formatTime(entryTime)}</p>
+                    </div>
+                  </div>
+                )}
+
+                {onBreak && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-yellow-400 font-medium mb-1">Break Start Time:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">{formatTime(breakStartTime)}</p>
                     </div>
                   </div>
                 )}
@@ -242,8 +273,18 @@ const Scanner = () => {
                   <div className="w-full mb-2">
                     <h4 className="text-yellow-400 font-medium mb-1">Exit Time:</h4>
                     <div className="bg-gray-800 rounded-md p-3 text-sm">
-                      <p className="text-gray-300">{exitTime}</p>
+                      <p className="text-gray-300">{formatTime(exitTime)}</p>
                     </div>
+                  </div>
+                )}
+
+                {!entryTime && !exitTime && (
+                  <div className="w-full mb-2">
+                    <h4 className="text-yellow-400 font-medium mb-1">Current Time:</h4>
+                    <div className="bg-gray-800 rounded-md p-3 text-sm">
+                      <p className="text-gray-300">{formatTime(new Date().toTimeString().split(" ")[0])}</p>
+                    </div>
+                    <p className="text-gray-300 mt-2">Scan the attendance QR to record your entry.</p>
                   </div>
                 )}
 
