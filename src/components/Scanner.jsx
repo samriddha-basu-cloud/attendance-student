@@ -319,10 +319,10 @@ const Scanner = () => {
                   <div className="w-full mb-4">
                     <RadioGroup value={takeBreak ? "break" : "exit"} onValueChange={(value) => setTakeBreak(value === "break")}>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="break" id="break" />
-                        <Label htmlFor="break">Take Break</Label>
-                        <RadioGroupItem value="exit" id="exit" />
-                        <Label htmlFor="exit">Exit</Label>
+                        <RadioGroupItem value="break" id="break" className="border-yellow-400 text-yellow-400" />
+                        <Label htmlFor="break" className="text-yellow-400">Take Break</Label>
+                        <RadioGroupItem value="exit" id="exit" className="border-yellow-400 text-yellow-400" />
+                        <Label htmlFor="exit" className="text-yellow-400">Exit</Label>
                       </div>
                     </RadioGroup>
                   </div>
